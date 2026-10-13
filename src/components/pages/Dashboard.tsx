@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Save, Loader2 } from 'lucide-react';
+import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Loader2 } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import { Semester, Course, GRADE_POINTS, calculateOverallCGPA, getDegreeClass } from '../../lib/cgpaEngine';
+import type { Semester, Course } from '../../lib/cgpaEngine';
+import { GRADE_POINTS, calculateOverallCGPA, getDegreeClass } from '../../lib/cgpaEngine';
 import ConfirmModal from '../common/ConfirmModal';
 
 export default function Dashboard() {
