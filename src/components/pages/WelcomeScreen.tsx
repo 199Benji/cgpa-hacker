@@ -21,7 +21,7 @@ export default function WelcomeScreen() {
       const user = result.user;
       const userEmail = user.email;
 
-      // 2. Check the VIP List in Firestore
+      // 2. Check the VIP List in Firestore.
       const userDoc = await getDoc(doc(db, "allowed_users", userEmail as string));
       if (userDoc.exists()) {
         // SUCCESS: Email is in the database
