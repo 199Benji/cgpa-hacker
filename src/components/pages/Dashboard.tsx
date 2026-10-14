@@ -1,89 +1,73 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Loader2 } from 'lucide-react';
+import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Pencil, Check, X } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import type { Semester, Course } from '../../lib/cgpaEngine';
 import { GRADE_POINTS, calculateOverallCGPA, getDegreeClass } from '../../lib/cgpaEngine';
 import ConfirmModal from '../common/ConfirmModal';
+import LoadingScreen from '../common/LoadingScreen';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   
-  // We get the user directly from Firebase Auth (more secure than router state)
   const user = auth.currentUser;
   const userEmail = user?.email || 'unknown';
   const userName = user?.displayName?.split(' ')[0] || 'Student';
 
-  // --- STATE ---
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // UI States
   const [activeSemesterId, setActiveSemesterId] = useState<string | null>(null);
   const [newSemName, setNewSemName] = useState('');
   const [isAddingSem, setIsAddingSem] = useState(false);
   
-  // Modal States
+  // Edit State
+  const [editingCourse, setEditingCourse] = useState<{ semId: string; course: Course } | null>(null);
+
   const [deleteSemesterId, setDeleteSemesterId] = useState<string | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<{ semId: string; courseId: string } | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
 
-  // Course Form States
   const [courseCode, setCourseCode] = useState('');
   const [courseTitle, setCourseTitle] = useState('');
   const [courseCredit, setCourseCredit] = useState('');
   const [courseGrade, setCourseGrade] = useState('');
 
-  // --- 1. LOAD DATA FROM CLOUD ON STARTUP ---
   useEffect(() => {
     if (!userEmail) return;
-
-    // "Listen" to the user's document in the 'users' collection
     const userDocRef = doc(db, 'users', userEmail);
-    
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
-        // Data exists in cloud, load it
         setSemesters(docSnap.data().semesters || []);
       } else {
-        // First time user, start empty
         setSemesters([]);
       }
       setLoading(false);
     });
-
-    // Cleanup listener when component unmounts
     return () => unsubscribe();
   }, [userEmail]);
 
-  // --- 2. SAVE DATA TO CLOUD HELPER ---
   const saveToCloud = async (newSemesters: Semester[]) => {
     if (!userEmail) return;
     try {
       const userDocRef = doc(db, 'users', userEmail);
-      // Save the array to the 'semesters' field
       await setDoc(userDocRef, { semesters: newSemesters, email: userEmail }, { merge: true });
     } catch (error) {
       console.error("Error saving to cloud:", error);
-      alert("Failed to save to cloud. Check console.");
     }
   };
 
-  // --- CALCULATIONS ---
   const { cgpa, totalCredits } = calculateOverallCGPA(semesters);
   const degreeClass = getDegreeClass(parseFloat(cgpa));
 
-  // --- HANDLERS ---
   const handleAddSemester = async () => {
     if (newSemName.trim()) {
       const newSem: Semester = { id: Date.now().toString(), name: newSemName.trim(), courses: [] };
       const updated = [...semesters, newSem];
-      
-      setSemesters(updated); // Update UI immediately
-      await saveToCloud(updated); // Save to Cloud
-      
+      setSemesters(updated);
+      await saveToCloud(updated);
       setNewSemName('');
       setIsAddingSem(false);
       setActiveSemesterId(newSem.id);
@@ -99,29 +83,60 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddCourse = async (semId: string) => {
+  // Handles both Adding NEW courses and UPDATING existing ones
+  const handleAddOrUpdateCourse = async (semId: string) => {
     if (courseCode && courseCredit && courseGrade) {
-      const newCourse: Course = {
-        id: Date.now().toString(),
+      const courseData: Course = {
+        id: editingCourse ? editingCourse.course.id : Date.now().toString(),
         code: courseCode.toUpperCase(),
         title: courseTitle,
         credit: parseInt(courseCredit),
         grade: courseGrade.toUpperCase(),
       };
       
-      const updated = semesters.map(sem => 
-        sem.id === semId ? { ...sem, courses: [...sem.courses, newCourse] } : sem
-      );
+      let updated;
+      if (editingCourse && editingCourse.semId === semId) {
+        // Update existing course
+        updated = semesters.map(sem =>
+          sem.id === semId ? { ...sem, courses: sem.courses.map(c => c.id === editingCourse.course.id ? courseData : c) } : sem
+        );
+        setEditingCourse(null); // Exit edit mode
+      } else {
+        // Add new course
+        updated = semesters.map(sem => 
+          sem.id === semId ? { ...sem, courses: [...sem.courses, courseData] } : sem
+        );
+      }
       
       setSemesters(updated);
       await saveToCloud(updated);
       
+      // Reset form
       setCourseCode(''); setCourseTitle(''); setCourseCredit(''); setCourseGrade('');
     }
   };
 
+  const handleEditCourse = (semId: string, course: Course) => {
+    setEditingCourse({ semId, course });
+    setCourseCode(course.code);
+    setCourseTitle(course.title);
+    setCourseCredit(course.credit.toString());
+    setCourseGrade(course.grade);
+    setActiveSemesterId(semId); // Ensure the semester is open
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCourse(null);
+    setCourseCode(''); setCourseTitle(''); setCourseCredit(''); setCourseGrade('');
+  };
+
   const confirmDeleteCourse = async () => {
     if (courseToDelete) {
+      // If we are deleting the course we are currently editing, cancel the edit
+      if (editingCourse?.course.id === courseToDelete.courseId) {
+        handleCancelEdit();
+      }
+
       const updated = semesters.map(sem => 
         sem.id === courseToDelete.semId 
           ? { ...sem, courses: sem.courses.filter(c => c.id !== courseToDelete.courseId) } 
@@ -133,31 +148,25 @@ export default function Dashboard() {
     }
   };
 
-  // --- LOADING SCREEN ---
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-text-main">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-lg">Syncing with Cloud...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Retrieving academic records..." />;
   }
 
   return (
     <div className="min-h-screen text-text-main p-4 md:p-8 relative z-10">
       <div className="max-w-5xl mx-auto relative z-10">
         
-        {/* Header */}
         <header className="flex flex-row justify-between items-center w-full mb-8">
           <div className="flex-1 min-w-0">
             <h1 className="text-xl md:text-3xl font-bold truncate">
               Hello, <span className="text-primary">{userName}</span> 
             </h1>
-            <p className="text-text-muted text-xs md:text-sm mt-0.5 truncate">
-              Signed in as {userEmail} • <span className="text-success">Cloud Synced</span>
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+              <p className="text-text-muted text-xs md:text-sm truncate">
+                Signed in as {userEmail}
+              </p>
+            </div>
           </div>
           <button 
             onClick={() => setShowExitModal(true)} 
@@ -167,7 +176,6 @@ export default function Dashboard() {
           </button>
         </header>
 
-        {/* Top Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-surface/80 backdrop-blur-md p-6 rounded-2xl border border-border shadow-lg relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
@@ -186,7 +194,6 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Semesters Section */}
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -200,7 +207,6 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* Add Semester Input */}
           <AnimatePresence>
             {isAddingSem && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
@@ -210,13 +216,12 @@ export default function Dashboard() {
                     placeholder="e.g. 100 Level First Semester"
                     className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" autoFocus
                   />
-                  <button onClick={handleAddSemester} className="bg-primary text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-primary-hover">Save to Cloud</button>
+                  <button onClick={handleAddSemester} className="bg-primary text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-primary-hover">Save</button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Semester List */}
           {semesters.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-border/30 rounded-2xl text-text-muted bg-surface/30">
               <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -229,7 +234,10 @@ export default function Dashboard() {
                 onToggle={() => setActiveSemesterId(activeSemesterId === sem.id ? null : sem.id)}
                 onDeleteSemester={() => setDeleteSemesterId(sem.id)}
                 onDeleteCourse={(courseId) => setCourseToDelete({ semId: sem.id, courseId })}
-                onAddCourse={handleAddCourse}
+                onAddOrUpdateCourse={handleAddOrUpdateCourse}
+                onEditCourse={handleEditCourse}
+                onCancelEdit={handleCancelEdit}
+                editingCourse={editingCourse}
                 courseCode={courseCode} setCourseCode={setCourseCode}
                 courseTitle={courseTitle} setCourseTitle={setCourseTitle}
                 courseCredit={courseCredit} setCourseCredit={setCourseCredit}
@@ -240,7 +248,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- MODALS --- */}
       <ConfirmModal 
         isOpen={!!deleteSemesterId}
         title="Delete Semester?"
@@ -277,20 +284,23 @@ export default function Dashboard() {
   );
 }
 
-// --- SUB-COMPONENT: Semester Card (Same as before) ---
 interface SemesterCardProps {
   semester: Semester; isOpen: boolean; onToggle: () => void; onDeleteSemester: () => void;
-  onDeleteCourse: (courseId: string) => void; onAddCourse: (semId: string) => void;
+  onDeleteCourse: (courseId: string) => void; onAddOrUpdateCourse: (semId: string) => void;
+  onEditCourse: (semId: string, course: Course) => void; onCancelEdit: () => void;
+  editingCourse: { semId: string; course: Course } | null;
   courseCode: string; setCourseCode: (v: string) => void; courseTitle: string; setCourseTitle: (v: string) => void;
   courseCredit: string; setCourseCredit: (v: string) => void; courseGrade: string; setCourseGrade: (v: string) => void;
 }
 
-function SemesterCard({ semester, isOpen, onToggle, onDeleteSemester, onDeleteCourse, onAddCourse, courseCode, setCourseCode, courseTitle, setCourseTitle, courseCredit, setCourseCredit, courseGrade, setCourseGrade }: SemesterCardProps) {
+function SemesterCard({ semester, isOpen, onToggle, onDeleteSemester, onDeleteCourse, onAddOrUpdateCourse, onEditCourse, onCancelEdit, editingCourse, courseCode, setCourseCode, courseTitle, setCourseTitle, courseCredit, setCourseCredit, courseGrade, setCourseGrade }: SemesterCardProps) {
   const semPoints = semester.courses.reduce((acc, c) => acc + (GRADE_POINTS[c.grade] || 0) * c.credit, 0);
   const semCredits = semester.courses.reduce((acc, c) => acc + c.credit, 0);
   const semGPA = semCredits > 0 ? (semPoints / semCredits).toFixed(2) : "0.00";
 
-  const handleAdd = (e: React.FormEvent) => { e.preventDefault(); onAddCourse(semester.id); };
+  const handleAdd = (e: React.FormEvent) => { e.preventDefault(); onAddOrUpdateCourse(semester.id); };
+  
+  const isEditingThisSem = editingCourse?.semId === semester.id;
 
   return (
     <div className="bg-surface/80 backdrop-blur-md rounded-2xl border border-border overflow-hidden shadow-lg">
@@ -320,16 +330,24 @@ function SemesterCard({ semester, isOpen, onToggle, onDeleteSemester, onDeleteCo
           <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="border-t border-border bg-background/30">
             <div className="p-5 space-y-4">
               <form onSubmit={handleAdd} className="grid grid-cols-2 md:grid-cols-12 gap-3 bg-surface p-4 rounded-xl border border-border">
-                <input type="text" placeholder="Code" value={courseCode} onChange={e => setCourseCode(e.target.value)} className="col-span-2 md:col-span-3 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" required />
-                <input type="text" placeholder="Title (Optional)" value={courseTitle} onChange={e => setCourseTitle(e.target.value)} className="col-span-2 md:col-span-4 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                <input type="text" placeholder="Code" value={courseCode} onChange={e => setCourseCode(e.target.value)} className="col-span-2 md:col-span-2 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" required />
+                <input type="text" placeholder="Title (Optional)" value={courseTitle} onChange={e => setCourseTitle(e.target.value)} className="col-span-2 md:col-span-3 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                 <input type="number" placeholder="Units" value={courseCredit} onChange={e => setCourseCredit(e.target.value)} className="col-span-1 md:col-span-2 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" required min="1" />
                 <select value={courseGrade} onChange={e => setCourseGrade(e.target.value)} className="col-span-1 md:col-span-2 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
                   <option value="">Grade</option>
                   {Object.keys(GRADE_POINTS).map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
-                <button type="submit" className="col-span-2 md:col-span-1 bg-primary hover:bg-primary-hover text-white rounded-lg flex items-center justify-center transition-colors">
-                  <Plus className="w-5 h-5" />
-                </button>
+                
+                <div className="col-span-2 md:col-span-3 flex gap-2">
+                  <button type="submit" className={`flex-1 rounded-lg flex items-center justify-center transition-colors ${isEditingThisSem ? 'bg-success hover:bg-emerald-600 text-white' : 'bg-primary hover:bg-primary-hover text-white'}`}>
+                    {isEditingThisSem ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                  </button>
+                  {isEditingThisSem && (
+                    <button type="button" onClick={onCancelEdit} className="flex-1 bg-surface hover:bg-danger/10 text-text-muted hover:text-danger border border-border rounded-lg flex items-center justify-center transition-colors">
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </form>
 
               <div className="space-y-2">
@@ -348,9 +366,14 @@ function SemesterCard({ semester, isOpen, onToggle, onDeleteSemester, onDeleteCo
                           <p className="text-xs text-text-muted">{course.title || 'Untitled'} • {course.credit} Units</p>
                         </div>
                       </div>
-                      <button onClick={() => onDeleteCourse(course.id)} className="text-text-muted hover:text-danger opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => onEditCourse(semester.id, course)} className="text-text-muted hover:text-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => onDeleteCourse(course.id)} className="text-text-muted hover:text-danger opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-2">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}

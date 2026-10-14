@@ -1,19 +1,23 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import WelcomeScreen from '../components/pages/WelcomeScreen';
 import Dashboard from '../components/pages/Dashboard';
+import ProtectedRoute from '../routes/ProtectedRoute'; 
 
-const AppRoutes = () => {
+export default function AppRoutes() {
   return (
     <Routes>
+      {/* Public Route */}
       <Route path="/" element={<WelcomeScreen />} />
       
-      {/* Protected Route: The Main App (We will add security logic here later) */}
-      <Route path="/dashboard" element={<Dashboard />} />
-      
-      {/* Catch-all: Redirect to home if URL is unknown */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Protected Route */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
     </Routes>
   );
-};
-
-export default AppRoutes;
+}
