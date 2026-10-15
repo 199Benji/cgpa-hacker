@@ -7,23 +7,33 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['favicon.png'],
       manifest: {
         name: 'GradeLogic',
         short_name: 'GradeLogic',
-        description: 'Track your academic journey',
-        theme_color: '#020617', 
+        description: 'Track your academic journey and calculate your CGPA.',
+        theme_color: '#020617', // Your dark background color
         background_color: '#020617',
         display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        orientation: 'portrait',
         icons: [
           {
-            src: '/favicon.png',
+            src: 'favicon.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/favicon.png',
+            src: 'favicon.png',
             sizes: '512x512',
             type: 'image/png'
+          },
+          {
+            src: 'favicon.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       }

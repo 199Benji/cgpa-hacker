@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import logoImg from '../../assets/favicon.svg'; 
+import logoImg from '/favicon.png'; 
 
 interface LoadingScreenProps {
   message?: string;
