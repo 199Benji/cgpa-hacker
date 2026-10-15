@@ -69,7 +69,7 @@ export default function WelcomeScreen() {
               <div className="bg-primary/10 p-2.5 rounded-xl">
                 <GraduationCap className="w-6 h-6 text-primary" />
               </div>
-              <span className="text-xl font-bold text-text-main">CGPA Hacker</span>
+              <span className="text-xl font-bold text-text-main">Grade Logic</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-text-main mb-3">
               Welcome Back.

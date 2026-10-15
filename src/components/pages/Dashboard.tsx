@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Pencil, Check, X } from 'lucide-react';
+import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Pencil, Check, X, FileText } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import type { Semester, Course } from '../../lib/cgpaEngine';
@@ -23,7 +23,6 @@ export default function Dashboard() {
   const [newSemName, setNewSemName] = useState('');
   const [isAddingSem, setIsAddingSem] = useState(false);
   
-  // Edit State
   const [editingCourse, setEditingCourse] = useState<{ semId: string; course: Course } | null>(null);
 
   const [deleteSemesterId, setDeleteSemesterId] = useState<string | null>(null);
@@ -83,7 +82,6 @@ export default function Dashboard() {
     }
   };
 
-  // Handles both Adding NEW courses and UPDATING existing ones
   const handleAddOrUpdateCourse = async (semId: string) => {
     if (courseCode && courseCredit && courseGrade) {
       const courseData: Course = {
@@ -96,13 +94,11 @@ export default function Dashboard() {
       
       let updated;
       if (editingCourse && editingCourse.semId === semId) {
-        // Update existing course
         updated = semesters.map(sem =>
           sem.id === semId ? { ...sem, courses: sem.courses.map(c => c.id === editingCourse.course.id ? courseData : c) } : sem
         );
-        setEditingCourse(null); // Exit edit mode
+        setEditingCourse(null);
       } else {
-        // Add new course
         updated = semesters.map(sem => 
           sem.id === semId ? { ...sem, courses: [...sem.courses, courseData] } : sem
         );
@@ -111,7 +107,6 @@ export default function Dashboard() {
       setSemesters(updated);
       await saveToCloud(updated);
       
-      // Reset form
       setCourseCode(''); setCourseTitle(''); setCourseCredit(''); setCourseGrade('');
     }
   };
@@ -122,7 +117,7 @@ export default function Dashboard() {
     setCourseTitle(course.title);
     setCourseCredit(course.credit.toString());
     setCourseGrade(course.grade);
-    setActiveSemesterId(semId); // Ensure the semester is open
+    setActiveSemesterId(semId);
   };
 
   const handleCancelEdit = () => {
@@ -132,11 +127,9 @@ export default function Dashboard() {
 
   const confirmDeleteCourse = async () => {
     if (courseToDelete) {
-      // If we are deleting the course we are currently editing, cancel the edit
       if (editingCourse?.course.id === courseToDelete.courseId) {
         handleCancelEdit();
       }
-
       const updated = semesters.map(sem => 
         sem.id === courseToDelete.semId 
           ? { ...sem, courses: sem.courses.filter(c => c.id !== courseToDelete.courseId) } 
@@ -199,12 +192,22 @@ export default function Dashboard() {
             <h2 className="text-xl font-bold flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" /> Academic Timeline
             </h2>
-            <button 
-              onClick={() => setIsAddingSem(!isAddingSem)}
-              className="flex-1 md:flex-none bg-primary text-white hover:bg-primary-hover px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-            >
-              <Plus className="w-4 h-4" /> Add Semester
-            </button>
+            
+            {/* NEW BUTTONS AREA */}
+            <div className="flex gap-2 w-full md:w-auto">
+              <button 
+                onClick={() => navigate('/transcript')}
+                className="flex-1 md:flex-none bg-surface text-text-main border border-border hover:bg-surface-hover px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                <FileText className="w-4 h-4" /> Transcript
+              </button>
+              <button 
+                onClick={() => setIsAddingSem(!isAddingSem)}
+                className="flex-1 md:flex-none bg-primary text-white hover:bg-primary-hover px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+              >
+                <Plus className="w-4 h-4" /> Add Semester
+              </button>
+            </div>
           </div>
 
           <AnimatePresence>
@@ -284,6 +287,7 @@ export default function Dashboard() {
   );
 }
 
+// --- SUB-COMPONENT: Semester Card ---
 interface SemesterCardProps {
   semester: Semester; isOpen: boolean; onToggle: () => void; onDeleteSemester: () => void;
   onDeleteCourse: (courseId: string) => void; onAddOrUpdateCourse: (semId: string) => void;
@@ -299,7 +303,6 @@ function SemesterCard({ semester, isOpen, onToggle, onDeleteSemester, onDeleteCo
   const semGPA = semCredits > 0 ? (semPoints / semCredits).toFixed(2) : "0.00";
 
   const handleAdd = (e: React.FormEvent) => { e.preventDefault(); onAddOrUpdateCourse(semester.id); };
-  
   const isEditingThisSem = editingCourse?.semId === semester.id;
 
   return (

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { GraduationCap } from 'lucide-react';
+import logoImg from '../../assets/favicon.svg'; 
 
 interface LoadingScreenProps {
   message?: string;
@@ -17,11 +17,16 @@ export default function LoadingScreen({ message = "Initializing Dashboard..." }:
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center z-10"
       >
-        <div className="bg-primary/10 p-4 rounded-2xl mb-6 border border-primary/20 shadow-lg shadow-primary/10">
-          <GraduationCap className="w-10 h-10 text-primary" />
+        {/* Your New Logo */}
+        <div className="bg-white/10 p-2 rounded-2xl mb-6 border border-white/20 shadow-lg shadow-primary/10">
+          <img 
+            src={logoImg} 
+            alt="GradeLogic Logo" 
+            className="w-16 h-16 object-contain" 
+          />
         </div>
         
-        <h2 className="text-xl font-bold mb-2 tracking-wider text-text-main">CGPA HACKER</h2>
+        <h2 className="text-2xl font-bold mb-2 tracking-wider text-text-main">GRADELOGIC</h2>
         <p className="text-text-muted text-sm mb-8">{message}</p>
         
         {/* Professional Spinner */}
