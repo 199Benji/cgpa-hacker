@@ -17,7 +17,6 @@ export default function LoadingScreen({ message = "Initializing Dashboard..." }:
         transition={{ duration: 0.5 }}
         className="flex flex-col items-center z-10"
       >
-        {/* Your New Logo */}
         <div className="bg-white/10 p-2 rounded-2xl mb-6 border border-white/20 shadow-lg shadow-primary/10">
           <img 
             src={logoImg} 

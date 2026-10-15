@@ -3,6 +3,7 @@ import WelcomeScreen from '../components/pages/WelcomeScreen';
 import Dashboard from '../components/pages/Dashboard';
 import ProtectedRoute from '../routes/ProtectedRoute'; 
 import TranscriptView from '../components/pages/TranscriptView';
+import Analytics from '../components/pages/Analytics';
 
 export default function AppRoutes() {
   return (
@@ -29,6 +30,17 @@ export default function AppRoutes() {
           </ProtectedRoute>
         } 
       />
-    </Routes>
+
+      <Route 
+       path="/analytics" 
+       element={
+    <ProtectedRoute>
+      <Analytics />
+    </ProtectedRoute>
+  } 
+/>
+</Routes>
+
+    
   );
 }
