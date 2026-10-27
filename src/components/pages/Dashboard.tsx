@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Pencil, Check, X, FileText, BarChart2 } from 'lucide-react';
+import { Plus, Trash2, LogOut, ChevronDown, ChevronUp, GraduationCap, BookOpen, Pencil, Check, X, FileText, BarChart2, Scale } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import type { Semester, Course } from '../../lib/cgpaEngine';
@@ -196,19 +196,25 @@ export default function Dashboard() {
             {/* PROFESSIONAL MOBILE/DESKTOP BUTTONS */}
             <div className="flex flex-col gap-3 w-full md:flex-row md:w-auto md:gap-2">
               
-              {/* Top Row: Viewing Tools (Side by side on mobile) */}
+              {/* Top Row: Viewing Tools (Responsive Grid) */}
               <div className="grid grid-cols-2 gap-2 md:flex">
                 <button 
                   onClick={() => navigate('/transcript')}
-                  className="flex items-center justify-center gap-2 bg-surface text-text-main border border-border hover:bg-surface-hover px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                  className="flex items-center justify-center gap-2 bg-surface text-text-main border border-border hover:bg-surface-hover px-3 py-2.5 rounded-lg text-sm font-semibold transition-all"
                 >
-                  <FileText className="w-4 h-4" /> <span>Transcript</span>
+                  <FileText className="w-4 h-4" /> <span className="whitespace-nowrap">Transcript</span>
                 </button>
                 <button 
                   onClick={() => navigate('/analytics')}
-                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-2.5 rounded-lg text-sm font-semibold transition-all"
                 >
-                  <BarChart2 className="w-4 h-4" /> <span>Analytics</span>
+                  <BarChart2 className="w-4 h-4" /> <span className="whitespace-nowrap">Analytics</span>
+                </button>
+                <button 
+                  onClick={() => navigate('/planner')}
+                  className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-3 py-2.5 rounded-lg text-sm font-semibold transition-all col-span-2 md:col-span-auto"
+                >
+                  <Scale className="w-4 h-4" /> <span className="whitespace-nowrap">Course Planner</span>
                 </button>
               </div>
 

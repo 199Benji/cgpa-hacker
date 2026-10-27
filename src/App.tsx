@@ -1,12 +1,13 @@
 import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
-import MatrixBackground from './components/common/MatrixBackground';
+import AcademicBackground from './components/common/AcademicBackground';
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="fixed inset-0 bg-[#020617] z-0" />
-      <MatrixBackground />
+      <AcademicBackground />
+
+      <AcademicBackground />
       <div className="relative z-10 min-h-screen">
         <AppRoutes />
       </div>

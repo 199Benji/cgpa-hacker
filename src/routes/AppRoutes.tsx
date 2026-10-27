@@ -4,6 +4,8 @@ import Dashboard from '../components/pages/Dashboard';
 import ProtectedRoute from '../routes/ProtectedRoute'; 
 import TranscriptView from '../components/pages/TranscriptView';
 import Analytics from '../components/pages/Analytics';
+import CoursePlanner from '../components/pages/CoursePlanner';
+
 
 export default function AppRoutes() {
   return (
@@ -39,7 +41,18 @@ export default function AppRoutes() {
     </ProtectedRoute>
   } 
 />
+
+<Route 
+  path="/planner" 
+  element={
+    <ProtectedRoute>
+      <CoursePlanner />
+    </ProtectedRoute>
+  } 
+/>
 </Routes>
+
+
 
     
   );
