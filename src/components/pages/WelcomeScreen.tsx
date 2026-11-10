@@ -59,7 +59,7 @@ export default function WelcomeScreen() {
 
         {/* RIGHT SIDE: Login Card */}
         <motion.div 
-          className="w-full md:w-1/2 bg-surface p-8 md:p-12 rounded-3xl shadow-2xl border border-border/50"
+          className="w-full md:w-1/2 bg-surface p-8 md:p-12 rounded-3xl shadow-2xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -79,17 +79,26 @@ export default function WelcomeScreen() {
             </p>
           </div>
 
-          {/* Error Message Box */}
+          {/* Error Message Box with Book Link */}
           {error && (
-            <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-3 rounded-lg mb-6 text-sm flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold">Access Restricted</p>
-                <p className="text-xs mt-1 opacity-90">{error}</p>
-                <a href="https://selar.co/your-book-link" target="_blank" className="inline-block mt-2 text-xs underline hover:text-white">
-                  Buy the book to get access &rarr;
-                </a>
+            <div className="bg-danger/10 border border-danger/20 text-danger px-4 py-4 rounded-xl mb-6 text-sm flex flex-col gap-2">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Access Restricted</p>
+                  <p className="text-xs mt-1 opacity-90">{error}</p>
+                </div>
               </div>
+              {/* Call-to-Action Button */}
+              <a 
+                href="https://selar.com/j4qd5e7q5h" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="mt-3 bg-primary hover:bg-orange-600 text-white text-center py-2.5 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 group"
+              >
+                Get GradeLogic Access Now
+                <span className="group-hover:translate-x-1 transition-transform">&rarr;</span>
+              </a>
             </div>
           )}
 
@@ -121,6 +130,22 @@ export default function WelcomeScreen() {
               </span>
               <div className="flex-grow border-t border-border/50"></div>
             </div>
+          </div>
+
+          {/* Footer - Book Link with Animation (NO BORDER LINE) */}
+          <div className="mt-8 pt-6 text-center">
+            <p className="text-text-muted text-sm">
+              Don't have access yet?
+            </p>
+            <a 
+              href="https://selar.co/your-book-link" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-primary font-semibold transition-all duration-300 hover:text-orange-400 hover:scale-105 hover:tracking-wide group"
+            >
+              Get the Book & Full Access 
+              <span className="inline-block ml-1 transition-transform duration-300 group-hover:translate-x-2">&rarr;</span>
+            </a>
           </div>
         </motion.div>
       </div>
