@@ -138,7 +138,7 @@ export default function WelcomeScreen() {
               Don't have access yet?
             </p>
             <a 
-              href="https://selar.co/your-book-link" 
+              href="https://selar.com/j4qd5e7q5h" 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-block mt-2 text-primary font-semibold transition-all duration-300 hover:text-orange-400 hover:scale-105 hover:tracking-wide group"
